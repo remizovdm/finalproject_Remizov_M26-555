@@ -9,3 +9,6 @@ ERROR 2026-11-05T11:11:45 Action: BUY, Currency: BTC, Amount: -1, Result: ERROR,
 INFO 2026-11-05T11:18:23 Проверка работы логирования
 INFO 2026-11-05T23:25:11 Проверка работы логирования
 INFO 2026-11-05T23:25:11 Action: BUY, Currency: USD, Amount: 1, Result: OK, Username: Arbi, User ID: 1, Rate: 1, Base: USD, Balance: 1500.0 -> 1501.0
+INFO 2026-11-06T00:30:47 Action: BUY, Currency: USD, Amount: 1.0, Result: OK, Username: Arbi, User ID: 1, Rate: 1, Base: USD, Balance: 1501.0 -> 1502.0
+INFO 2026-11-06T00:30:53 Action: SELL, Currency: USD, Amount: 1.0, Result: OK, Username: Arbi, User ID: 1, Rate: 1, Base: USD, Balance: 1502.0 -> 1501.0
+ERROR 2026-11-06T00:34:48 Action: SELL, Currency: BTC, Amount: 100.0, Result: ERROR, Exception: InsufficientFundsError, Message: Недостаточно средств: доступно 0.19 BTC, требуется 100.0 BTC, Username: Arbi
