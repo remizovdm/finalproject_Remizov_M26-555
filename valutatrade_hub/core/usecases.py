@@ -16,7 +16,9 @@ from ..infra.settings import SettingsLoader
 
 from ..decorators import log_action
 
-from .exceptions import InsufficientFundsError
+from .exceptions import InsufficientFundsError, ApiRequestError
+
+from .currencies import get_currency
 
 current_user = None
 
@@ -125,6 +127,7 @@ def buy(currency: str, amount: float):
         raise ValueError("Необходимо войти в систему!")
 
     currency = validate_currency_code(currency)
+    get_currency(currency)
     amount = validate_amount(amount)
 
     with open("data/users.json", "r") as file:
@@ -188,6 +191,7 @@ def sell(currency: str, amount: float):
         raise ValueError("Необходимо войти в систему!")
 
     currency = validate_currency_code(currency)
+    get_currency(currency)
     amount = validate_amount(amount)
 
     with open("data/users.json", "r") as file:
@@ -207,10 +211,7 @@ def sell(currency: str, amount: float):
             break
 
     if currency not in saved_wallets:
-        raise ValueError(
-            f"У вас нет кошелька '{currency}'. "
-            "Добавьте валюту: она создаётся автоматически при первой покупке."
-            )
+        raise InsufficientFundsError(currency, 0, amount)
 
     portfolio = Portfolio(user_id)
 
@@ -251,6 +252,9 @@ def sell(currency: str, amount: float):
         "new_balance": wallet.balance
         }
 
+def refresh_rates():
+    raise ApiRequestError("Сервис обновления курсов пока недоступен")
+
 
 def get_rate(from_currency, to_currency):
     from_currency = validate_currency_code(from_currency)
@@ -270,12 +274,10 @@ def get_rate(from_currency, to_currency):
         updated_at = rates[reverse_pair]["updated_at"]
         updated_at = datetime.fromisoformat(updated_at)
     else:
-        print(f"Курс {currency_pair} недоступен. Повторите попытку позже.")
-        return None
+        refresh_rates()
     now = datetime.now()
     time_difference = now - updated_at
     if time_difference.total_seconds() < SettingsLoader().get("RATES_TTL_SECONDS"):
         return rate, updated_at
     else:
-        print(f"Курс {currency_pair} недоступен. Повторите попытку позже.")
-        return None
+        refresh_rates()

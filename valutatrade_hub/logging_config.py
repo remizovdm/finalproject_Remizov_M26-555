@@ -19,7 +19,3 @@ def setup_logging():
         handler.setFormatter(formatter)
         logger.addHandler(handler)
     return logger
-
-
-logger = setup_logging()
-logger.info("Проверка работы логирования")
