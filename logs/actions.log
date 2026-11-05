@@ -1,0 +1,11 @@
+INFO 2026-11-04T22:52:14 Проверка работы логирования
+INFO 2026-11-04T22:52:21 Проверка работы логирования
+INFO 2026-11-04T23:01:36 Проверка работы логирования
+INFO 2026-11-04T23:02:34 Проверка работы логирования
+INFO 2026-11-04T23:02:34 Action: TEST_ACTION, Result: OK
+ERROR 2026-11-04T23:02:34 Action: TEST_ACTION, Result: ERROR, Exception: ValueError, Message: Сумма должна быть положительной
+INFO 2026-11-05T11:11:45 Проверка работы логирования
+ERROR 2026-11-05T11:11:45 Action: BUY, Currency: BTC, Amount: -1, Result: ERROR, Exception: ValueError, Message: Необходимо войти в систему!, Username: None
+INFO 2026-11-05T11:18:23 Проверка работы логирования
+INFO 2026-11-05T23:25:11 Проверка работы логирования
+INFO 2026-11-05T23:25:11 Action: BUY, Currency: USD, Amount: 1, Result: OK, Username: Arbi, User ID: 1, Rate: 1, Base: USD, Balance: 1500.0 -> 1501.0

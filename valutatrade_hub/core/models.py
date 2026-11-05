@@ -4,6 +4,8 @@ import hashlib
 
 import secrets
 
+from .exceptions import InsufficientFundsError
+
 class User:
     def __init__(self, user_id: int, username: str,
                   hashed_password: str, salt: str, 
@@ -69,10 +71,10 @@ class Wallet:
     def withdraw(self, amount: float):
         if amount <= 0:
             raise ValueError("Сумма снятия должна быть положительной!")
-        elif amount <= self._balance:
+        elif amount <= self.balance:
             self.balance = self.balance - amount
         else:
-            raise ValueError("Сумма снятия не должна превышать текущий баланс")
+            raise InsufficientFundsError(self.currency_code, self.balance, amount)
 
     def get_balance_info(self) -> str:
         return f"Текущий баланс - {self.currency_code}: {self._balance}"
