@@ -15,9 +15,3 @@ class SettingsLoader:
 
     def get(self, key: str, default = None):
         return self._config.get(key, default)
-
-a = SettingsLoader()
-b = SettingsLoader()
-
-print(a is b)
-print(a.get("RATES_TTL_SECONDS"))

@@ -4,7 +4,7 @@ import secrets
 
 import hashlib
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from valutatrade_hub.core.models import User, Wallet, Portfolio
 
@@ -19,6 +19,8 @@ from ..decorators import log_action
 from .exceptions import InsufficientFundsError, ApiRequestError
 
 from .currencies import get_currency
+
+from valutatrade_hub.parser_service.updater import RatesUpdater
 
 current_user = None
 
@@ -253,7 +255,14 @@ def sell(currency: str, amount: float):
         }
 
 def refresh_rates():
-    raise ApiRequestError("Сервис обновления курсов пока недоступен")
+    updater = RatesUpdater()
+    updated_count, with_errors = updater.run_update()
+
+    if updated_count == 0:
+        raise ApiRequestError("Не удалось обновить курсы валют")
+
+    return updated_count, with_errors
+
 
 
 def get_rate(from_currency, to_currency):
@@ -261,23 +270,36 @@ def get_rate(from_currency, to_currency):
     to_currency = validate_currency_code(to_currency)
     get_currency(from_currency)
     get_currency(to_currency)
-    with open(SettingsLoader().get("RATES_FILE"), "r") as file:
-        rates = json.load(file)
+
     currency_pair = f"{from_currency}_{to_currency}"
     reverse_pair = f"{to_currency}_{from_currency}"
-    if currency_pair in rates:
-        rate = rates[currency_pair]["rate"]
-        updated_at = rates[currency_pair]["updated_at"]
-        updated_at = datetime.fromisoformat(updated_at)
-    elif reverse_pair in rates:
-        rate = 1 / rates[reverse_pair]["rate"]
-        updated_at = rates[reverse_pair]["updated_at"]
-        updated_at = datetime.fromisoformat(updated_at)
-    else:
-        refresh_rates()
-    now = datetime.now()
-    time_difference = now - updated_at
-    if time_difference.total_seconds() < SettingsLoader().get("RATES_TTL_SECONDS"):
-        return rate, updated_at
-    else:
-        refresh_rates()
+
+    for attempt in range(2):
+        with open(SettingsLoader().get("RATES_FILE"), "r") as file:
+            rates = json.load(file)["pairs"]
+
+        if currency_pair in rates:
+            rate = rates[currency_pair]["rate"]
+            updated_at = datetime.fromisoformat(rates[currency_pair]["updated_at"])
+
+        elif reverse_pair in rates:
+            rate = 1 / rates[reverse_pair]["rate"]
+            updated_at = datetime.fromisoformat(rates[reverse_pair]["updated_at"])
+
+        else:
+            if attempt == 0:
+                refresh_rates()
+                continue
+            raise ApiRequestError(f"Курс {currency_pair} не найден")
+
+        now = datetime.now(timezone.utc)
+        time_difference = now - updated_at
+
+        if time_difference.total_seconds() < SettingsLoader().get("RATES_TTL_SECONDS"):
+            return rate, updated_at
+
+        if attempt == 0:
+            refresh_rates()
+
+    raise ApiRequestError(f"Не удалось получить актуальный курс {currency_pair}")
+
