@@ -3,9 +3,10 @@ __pycache__/
 *.egg-info/
 dist/
 build/
-t
 .venv/
 
 .vscode/
 
 .env
+
+*.log
