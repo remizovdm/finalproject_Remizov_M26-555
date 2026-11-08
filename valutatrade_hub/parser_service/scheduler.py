@@ -2,6 +2,7 @@ import time
 
 from valutatrade_hub.parser_service.updater import RatesUpdater
 
+
 def start_scheduler(interval=300):
     updater = RatesUpdater()
     while True:

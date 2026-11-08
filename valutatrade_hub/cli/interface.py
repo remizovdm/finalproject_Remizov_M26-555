@@ -1,17 +1,16 @@
 import argparse
 import shlex
-import json
 
 from valutatrade_hub.core import usecases
-
 from valutatrade_hub.core.exceptions import (
-    InsufficientFundsError,
-    CurrencyNotFoundError,
     ApiRequestError,
-    )
+    CurrencyNotFoundError,
+    InsufficientFundsError,
+)
 
 
 def create_parser():
+    """Создание парсера командной строки"""
     parser = argparse.ArgumentParser(
         description="ValutaTrade Hub"
     )
@@ -51,9 +50,32 @@ def create_parser():
 
 
 def main():
+    """Запуск интерфейса командной строки"""
     parser = create_parser()
 
     print("Добро пожаловать в ValutaTrade Hub! Введите необходимую команду или введите 'exit' для выхода.")
+    print(
+        "\nКоманды:\n\n"
+        "register — регистрация пользователя\n"
+        "  register --username testuser --password 1234\n\n"
+        "login — вход в систему\n"
+        "  login --username testuser --password 1234\n\n"
+        "show-portfolio — просмотр портфеля\n"
+        "  show-portfolio --base USD\n\n"
+        "buy — покупка валюты\n"
+        "  buy --currency BTC --amount 0.01\n\n"
+        "sell — продажа валюты\n"
+        "  sell --currency BTC --amount 0.01\n\n"
+        "get-rate — получение курса валют\n"
+        "  get-rate --from BTC --to USD\n\n"
+        "show-rates — просмотр курсов из кеша\n"
+        "  show-rates\n"
+        "  show-rates --currency BTC\n"
+        "  show-rates --top 2\n\n"
+        "update-rates — обновление курсов\n"
+        "  update-rates\n\n"
+        "exit — выход из программы\n"
+    )
 
     while True:
         command = input("> ").strip()
@@ -86,58 +108,21 @@ def main():
                     )
 
             elif args.command == "update-rates":
-                count, with_errors = usecases.refresh_rates()
+                count, with_errors, last_refresh = usecases.refresh_rates()
 
                 if with_errors:
                     print("Update completed with errors.")
                 else:
-                    with open("data/rates.json", "r", encoding="utf-8") as file:
-                        rates = json.load(file)
-
-                    print(
-                        f"Update successful. Total rates updated: {count}. "
-                        f"Last refresh: {rates['last_refresh']}"
-                    )
+                    print(f"Update successful. Total rates updated: {count}. Last refresh: {last_refresh}")
 
             elif args.command == "show-rates":
-                try:
-                    with open("data/rates.json", "r", encoding="utf-8") as file:
-                        rates = json.load(file)
-                except (FileNotFoundError, json.JSONDecodeError):
-                    rates = {}
+                rates = usecases.show_rates(args.currency, args.top)
 
                 pairs = rates.get("pairs", {})
 
                 if not pairs:
                     print("Локальный кеш курсов пуст. Выполните 'update-rates', чтобы загрузить данные.")
                     continue
-
-                if args.currency:
-                    currency = args.currency.upper()
-                    pairs = {
-                        pair: data
-                        for pair, data in pairs.items()
-                        if pair.startswith(currency + "_")
-                    }
-
-                if args.currency and not pairs:
-                     print(f"Курс для '{currency}' не найден в кеше.")
-                     continue
-
-                if args.top is not None:
-                    crypto_pairs = {
-                        pair: data
-                        for pair, data in pairs.items()
-                        if pair.split("_")[0] in ("BTC", "ETH")
-                    }
-
-                    pairs = dict(
-                        sorted(
-                            crypto_pairs.items(),
-                            key=lambda item: item[1]["rate"],
-                            reverse=True
-                        )[:args.top]
-                    )
 
                 print(f"Rates from cache (updated at {rates['last_refresh']}):")
                 for pair, data in pairs.items():

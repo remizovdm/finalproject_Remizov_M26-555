@@ -8,6 +8,7 @@ from valutatrade_hub.parser_service.config import ParserConfig
 
 
 class RatesStorage:
+    """Класс для хранения курсов валют"""
 
     def __init__(self):
         config = ParserConfig()
@@ -15,6 +16,7 @@ class RatesStorage:
         self.history_path = Path(config.HISTORY_FILE_PATH)
 
     def read_json(self, path, default):
+        """Чтение хранилища курсов"""
         if not path.exists():
             return default
 
@@ -22,6 +24,7 @@ class RatesStorage:
             return json.load(file)
 
     def write_json(self, path, data):
+        """Запись в хранилище курсов"""
         path.parent.mkdir(parents=True, exist_ok=True)
 
         temp_path = None
@@ -43,6 +46,7 @@ class RatesStorage:
                 os.remove(temp_path)
 
     def save_rates(self, records):
+        """Сохранение курсов"""
         cache = self.read_json(self.rates_path, {"pairs": {}})
         history = self.read_json(self.history_path, [])
         

@@ -8,18 +8,21 @@ from valutatrade_hub.parser_service.config import ParserConfig
 
 
 class BaseApiClient(ABC):
+    """Базовый класс клиента"""
 
     @abstractmethod
     def fetch_rates(self) -> dict:
-        pass
+        """Получение курсов валют"""
 
 
 class CoinGeckoClient(BaseApiClient):
+    """Класс клиента CoinGecko"""
 
     def __init__(self):
         self.config = ParserConfig()
 
     def fetch_rates(self) -> dict:
+        """Получение курсов валют CoinGecko"""
         params = {
             "ids": ",".join(self.config.CRYPTO_ID_MAP.values()),
             "vs_currencies": self.config.BASE_CURRENCY.lower()
@@ -52,11 +55,13 @@ class CoinGeckoClient(BaseApiClient):
 
 
 class ExchangeRateApiClient(BaseApiClient):
+    """Класс клиента ExchangeRate"""
 
     def __init__(self):
         self.config = ParserConfig()
 
     def fetch_rates(self) -> dict:
+        """Получение курсов валют ExchangeRate"""
         if not self.config.EXCHANGERATE_API_KEY:
             raise ApiRequestError("Не задан API-ключ ExchangeRate-API")
 

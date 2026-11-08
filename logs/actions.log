@@ -12,3 +12,13 @@ INFO 2026-11-05T23:25:11 Action: BUY, Currency: USD, Amount: 1, Result: OK, User
 INFO 2026-11-06T00:30:47 Action: BUY, Currency: USD, Amount: 1.0, Result: OK, Username: Arbi, User ID: 1, Rate: 1, Base: USD, Balance: 1501.0 -> 1502.0
 INFO 2026-11-06T00:30:53 Action: SELL, Currency: USD, Amount: 1.0, Result: OK, Username: Arbi, User ID: 1, Rate: 1, Base: USD, Balance: 1502.0 -> 1501.0
 ERROR 2026-11-06T00:34:48 Action: SELL, Currency: BTC, Amount: 100.0, Result: ERROR, Exception: InsufficientFundsError, Message: Недостаточно средств: доступно 0.19 BTC, требуется 100.0 BTC, Username: Arbi
+INFO 2026-11-07T21:38:51 Action: BUY, Currency: EUR, Amount: 10.0, Result: OK, Username: Arbi, User ID: 1, Rate: 1.1159468809284678, Base: USD, Balance: 200.0 -> 210.0
+INFO 2026-11-07T21:39:32 Action: SELL, Currency: EUR, Amount: 10.0, Result: OK, Username: Arbi, User ID: 1, Rate: 1.1159468809284678, Base: USD, Balance: 210.0 -> 200.0
+INFO 2026-11-08T15:04:41 Action: BUY, Currency: BTC, Amount: 0.01, Result: OK, Username: demo1108, User ID: 3, Rate: 75727, Base: USD, Balance: 0.0 -> 0.01
+INFO 2026-11-08T15:04:50 Action: SELL, Currency: BTC, Amount: 0.005, Result: OK, Username: demo1108, User ID: 3, Rate: 75727, Base: USD, Balance: 0.01 -> 0.005
+ERROR 2026-11-08T15:06:32 Action: SELL, Currency: BTC, Amount: 100.0, Result: ERROR, Exception: InsufficientFundsError, Message: Недостаточно средств: доступно 0.005 BTC, требуется 100.0 BTC, Username: demo1108
+ERROR 2026-11-08T15:06:41 Action: BUY, Currency: XYZ, Amount: 1.0, Result: ERROR, Exception: CurrencyNotFoundError, Message: Неизвестная валюта 'XYZ', Username: demo1108
+INFO 2026-11-08T15:20:46 Action: BUY, Currency: BTC, Amount: 0.01, Result: OK, Username: dmitry26, User ID: 4, Rate: 75907, Base: USD, Balance: 0.0 -> 0.01
+INFO 2026-11-08T15:21:00 Action: SELL, Currency: BTC, Amount: 0.005, Result: OK, Username: dmitry26, User ID: 4, Rate: 75907, Base: USD, Balance: 0.01 -> 0.005
+ERROR 2026-11-08T15:22:06 Action: SELL, Currency: BTC, Amount: 100.0, Result: ERROR, Exception: InsufficientFundsError, Message: Недостаточно средств: доступно 0.005 BTC, требуется 100.0 BTC, Username: dmitry26
+ERROR 2026-11-08T15:22:17 Action: BUY, Currency: XYZ, Amount: 1.0, Result: ERROR, Exception: CurrencyNotFoundError, Message: Неизвестная валюта 'XYZ', Username: dmitry26

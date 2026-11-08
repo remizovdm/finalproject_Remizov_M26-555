@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class ParserConfig:
+    """Конфигурация парсера курсов валют"""
     EXCHANGERATE_API_KEY: str | None = field(
         default_factory=lambda: os.getenv("EXCHANGERATE_API_KEY")
     )

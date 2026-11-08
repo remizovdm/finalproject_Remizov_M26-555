@@ -1,11 +1,13 @@
 def validate_amount(amount: float) -> float:
+    """Проверка суммы (должна быть положительной)"""
     if amount <= 0:
         raise ValueError("'amount' должен быть положительным числом")
     return amount
 
 def validate_currency_code(currency_code: str) -> str:
+    """Проверка кода валюты на соответствие необходимым требованиям"""
     if not isinstance(currency_code, str):
-        raise ValueError("Код валюты должен быть строкой")
+        raise TypeError("Код валюты должен быть строкой")
     if currency_code.strip() == "":
         raise ValueError("Код валюты не может быть пустым")
     elif currency_code.isupper() == False:

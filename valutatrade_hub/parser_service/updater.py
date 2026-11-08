@@ -1,22 +1,24 @@
-
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
+from valutatrade_hub.core.exceptions import ApiRequestError
 from valutatrade_hub.parser_service.api_clients import (
     CoinGeckoClient,
     ExchangeRateApiClient,
 )
+from valutatrade_hub.parser_service.config import ParserConfig
 from valutatrade_hub.parser_service.storage import RatesStorage
-from valutatrade_hub.core.exceptions import ApiRequestError
 
 
 class RatesUpdater:
+    """Класс обновления курсов валют"""
 
     def __init__(self):
         self.clients = [
             ("CoinGecko", CoinGeckoClient()),
             ("ExchangeRate-API", ExchangeRateApiClient())
         ]
+        self.config = ParserConfig()
         self.storage = RatesStorage()
         self.logger = logging.getLogger(__name__)
         self.logger.propagate = False
@@ -28,6 +30,7 @@ class RatesUpdater:
             self.logger.addHandler(handler)
 
     def run_update(self):
+        """Запуск обновления"""
         records = []
         with_errors = False
         self.logger.info("Starting rates update...")
@@ -35,7 +38,7 @@ class RatesUpdater:
         for source, client in self.clients:
             try:
                 rates = client.fetch_rates()
-                timestamp = datetime.now(timezone.utc).isoformat()
+                timestamp = datetime.now(UTC).isoformat()
 
                 for pair, rate in rates.items():
                     from_currency, to_currency = pair.split("_")
@@ -60,7 +63,7 @@ class RatesUpdater:
 
         if records:
             self.logger.info(
-                "Writing %s rates to data/rates.json...", len(records)
+                "Writing %s rates to %s...", len(records), self.config.RATES_FILE_PATH
                 )
             self.storage.save_rates(records)
 

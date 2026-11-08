@@ -1,8 +1,10 @@
 import functools
-import logging
+
 from .logging_config import setup_logging
 
+
 def log_action(func):
+    """Декоратор логирования операций и ошибок"""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         currency = kwargs.get("currency", args[0] if len(args) > 0 else None)

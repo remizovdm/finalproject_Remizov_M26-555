@@ -1,7 +1,9 @@
 import json
 
+
 # Singleton реализован через __new__ для простоты и читабельности
 class SettingsLoader:
+    """Класс загрузки настроек"""
     __instance = None
     def __new__(cls):
         if cls.__instance is None:
@@ -14,4 +16,5 @@ class SettingsLoader:
                 self._config = json.load(file)
 
     def get(self, key: str, default = None):
+        """Возвращение настроек"""
         return self._config.get(key, default)

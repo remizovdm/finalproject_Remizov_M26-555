@@ -1,13 +1,14 @@
 from abc import ABC, abstractmethod
 
+from .exceptions import CurrencyNotFoundError
 from .utils import validate_currency_code
 
-from .exceptions import CurrencyNotFoundError
 
 class Currency(ABC):
+    """Базовый класс валюты"""
     def __init__(self, name: str, code: str):
         if not isinstance(name, str):
-            raise ValueError("Имя валюты должно быть строкой")
+            raise TypeError("Имя валюты должно быть строкой")
         elif name.strip() != "":
             self.name = name
         else:
@@ -16,22 +17,26 @@ class Currency(ABC):
 
     @abstractmethod
     def get_display_info(self) -> str:
-        pass
+        """Возвращение информации о валюте"""
 
 class FiatCurrency(Currency):
+    """Класс фиатной валюты"""
     def __init__(self, name: str, code: str, issuing_country: str):
         super().__init__(name, code)
         self.issuing_country = issuing_country
 
     def get_display_info(self) -> str:
+        """Возвращение информации о фиатной валюте"""
         return f"[FIAT] {self.code} — {self.name} (Issuing: {self.issuing_country})"
 
 class CryptoCurrency(Currency):
+    """Класс криптовалюты"""
     def __init__(self, name: str, code: str, algorithm: str, market_cap: float):
         super().__init__(name, code)
         self.algorithm = algorithm
         self.market_cap = market_cap
     def get_display_info(self) -> str:
+        """Возвращение информации о криптовалюте"""
         return f"[CRYPTO] {self.code} — {self.name} (Algo: {self.algorithm}, MCAP: {self.market_cap})"
     
 CURRENCY_REESTR = {
@@ -43,8 +48,8 @@ CURRENCY_REESTR = {
 }
 
 def get_currency(code: str) -> Currency:
+    """Возвращение валюты по коду"""
     if code in CURRENCY_REESTR:
         return CURRENCY_REESTR[code]
     else:
         raise CurrencyNotFoundError(code)
-

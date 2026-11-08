@@ -1,30 +1,24 @@
-import json
-
-import secrets
-
 import hashlib
+import json
+import secrets
+from datetime import UTC, datetime
 
-from datetime import datetime, timezone
-
-from valutatrade_hub.core.models import User, Wallet, Portfolio
-
+from valutatrade_hub.core.models import Portfolio, User
 from valutatrade_hub.core.utils import validate_amount, validate_currency_code
-
-from .currencies import get_currency
-
-from ..infra.settings import SettingsLoader
+from valutatrade_hub.parser_service.updater import RatesUpdater
 
 from ..decorators import log_action
-
-from .exceptions import InsufficientFundsError, ApiRequestError
-
+from ..infra.settings import SettingsLoader
 from .currencies import get_currency
-
-from valutatrade_hub.parser_service.updater import RatesUpdater
+from .exceptions import ApiRequestError, InsufficientFundsError
 
 current_user = None
 
+def get_current_user_id():
+    """Возвращение ID текущего пользователя"""
+
 def register(username: str, password: str):
+    """Регистрация нового пользователя и установка пароля"""
     with open("data/users.json", "r") as file:
         users = json.load(file)
     for user in users:
@@ -38,8 +32,8 @@ def register(username: str, password: str):
     registration_date = datetime.now()
     new_user = User(user_id, username, hashed_password, salt, registration_date)
     user_data = {
-        "user_id": user_id,
-        "username": username,
+        "user_id": new_user.get_user_id(),
+        "username": new_user.get_username(),
         "hashed_password": hashed_password,
         "salt": salt,
         "registration_date": registration_date.isoformat()
@@ -59,6 +53,7 @@ def register(username: str, password: str):
     print(f"Пользователь '{username}' успешно зарегистрирован (id={user_id}). Войдите: login --username {username} --password ****")
 
 def login(username: str, password: str):
+    """Вход в систему"""
     global current_user
     with open("data/users.json", "r") as file:
         users = json.load(file)
@@ -69,9 +64,15 @@ def login(username: str, password: str):
         raise ValueError(f"Пользователь '{username}' не найден")
     for user in users:
         if user['username'] == username:
-            hashed_password = user['hashed_password']
-            salt = user['salt']
-    if hashlib.sha256((password  + salt).encode()).hexdigest() ==  hashed_password:
+            current_user_obj = User(
+                user['user_id'],
+                user['username'],
+                user['hashed_password'],
+                user['salt'],
+                datetime.fromisoformat(user['registration_date'])
+                )
+            break
+    if current_user_obj.verify_password(password):
         print(f"Вы вошли как '{username}'")
         current_user = username
         return True
@@ -80,6 +81,7 @@ def login(username: str, password: str):
         return False
 
 def show_portfolio(base: str = "USD"):
+    """Отображение портфеля"""
     if current_user is None:
         raise ValueError("Необходимо войти в систему!")
     with open("data/users.json", "r") as file:
@@ -95,7 +97,13 @@ def show_portfolio(base: str = "USD"):
             wallets = user['wallets']
             break
     with open("data/rates.json", "r") as file:
-        rates = json.load(file)
+        rates = json.load(file)["pairs"]
+    exchange_rates = {"USD": 1.0}
+
+    for pair, data in rates.items():
+        currency, base_currency = pair.split("_")
+        if base_currency == "USD":
+            exchange_rates[currency] = data["rate"]
     if base == "USD":
         base_rate = 1
     else:
@@ -103,11 +111,16 @@ def show_portfolio(base: str = "USD"):
         if base_pair not in rates:
             raise ValueError(f"Неизвестная базовая валюта '{base}'")
         base_rate = rates[base_pair]['rate']
+    portfolio = Portfolio(user_id)
+
+    for currency, balance in wallets.items():
+        portfolio.add_currency(currency)
+        portfolio.get_wallet(currency).balance = balance["balance"]
     if not wallets:
         print(f"У пользователя {current_user} нет кошельков!")
     else:
         print(f"Портфель пользователя '{current_user}' (база: {base}):")
-        total_value = 0
+        total_value = portfolio.get_total_value(base, exchange_rates)
 
         for currency, balance in wallets.items():
             if currency == "USD":
@@ -117,7 +130,6 @@ def show_portfolio(base: str = "USD"):
                 rate = rates[currency_pair]['rate']
 
             converted_value = balance['balance'] * rate / base_rate
-            total_value = total_value + converted_value
             print(f"- {currency}: {balance['balance']:.4f} → {converted_value:,.2f} {base}")
 
         print("---------------------------------")
@@ -125,6 +137,7 @@ def show_portfolio(base: str = "USD"):
 
 @log_action
 def buy(currency: str, amount: float):
+    """Покупка в выбранной валюте"""
     if current_user is None:
         raise ValueError("Необходимо войти в систему!")
 
@@ -159,7 +172,7 @@ def buy(currency: str, amount: float):
     old_balance = wallet.balance
 
     with open("data/rates.json", "r") as file:
-        rates = json.load(file)
+        rates = json.load(file)["pairs"]
 
     if currency == "USD":
         rate = 1
@@ -189,6 +202,7 @@ def buy(currency: str, amount: float):
 
 @log_action
 def sell(currency: str, amount: float):
+    """Продажа в выбранной валюте"""
     if current_user is None:
         raise ValueError("Необходимо войти в систему!")
 
@@ -227,7 +241,7 @@ def sell(currency: str, amount: float):
     if amount > wallet.balance:
         raise InsufficientFundsError(currency, wallet.balance, amount)
     with open("data/rates.json", "r") as file:
-        rates = json.load(file)
+        rates = json.load(file)["pairs"]
 
     if currency == "USD":
         rate = 1
@@ -255,17 +269,20 @@ def sell(currency: str, amount: float):
         }
 
 def refresh_rates():
+    """Обновление курсов валют"""
     updater = RatesUpdater()
     updated_count, with_errors = updater.run_update()
 
     if updated_count == 0:
         raise ApiRequestError("Не удалось обновить курсы валют")
 
-    return updated_count, with_errors
+    rates = show_rates()
+    return updated_count, with_errors, rates.get("last_refresh")
 
 
 
 def get_rate(from_currency, to_currency):
+    """Получение курсов валют"""
     from_currency = validate_currency_code(from_currency)
     to_currency = validate_currency_code(to_currency)
     get_currency(from_currency)
@@ -292,7 +309,7 @@ def get_rate(from_currency, to_currency):
                 continue
             raise ApiRequestError(f"Курс {currency_pair} не найден")
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         time_difference = now - updated_at
 
         if time_difference.total_seconds() < SettingsLoader().get("RATES_TTL_SECONDS"):
@@ -302,4 +319,44 @@ def get_rate(from_currency, to_currency):
             refresh_rates()
 
     raise ApiRequestError(f"Не удалось получить актуальный курс {currency_pair}")
+
+def show_rates(currency=None, top=None):
+    """Возвращение курсов валют с возможностью фильтрации"""
+    try:
+        with open("data/rates.json", "r", encoding="utf-8") as file:
+            rates = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        rates = {}
+
+    if currency:
+        currency = currency.upper()
+        pairs = rates.get("pairs", {})
+
+        rates["pairs"] = {
+            pair: data
+            for pair, data in pairs.items()
+            if pair.startswith(currency + "_")
+            }
+
+    if top is not None:
+        if top < 1:
+            raise ValueError("Параметр --top должен быть больше нуля")
+
+        pairs = rates.get("pairs", {})
+
+        crypto_pairs = {
+            pair: data
+            for pair, data in pairs.items()
+            if pair.split("_")[0] in ("BTC", "ETH")
+        }
+
+        rates["pairs"] = dict(
+            sorted(
+                crypto_pairs.items(),
+                key=lambda item: item[1]["rate"],
+                reverse=True
+            )[:top]
+        )
+
+    return rates
 
