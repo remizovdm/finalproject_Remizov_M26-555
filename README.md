@@ -8,6 +8,7 @@
 
 ## Структура каталогов
 
+```text
 valutatrade_hub/
 ├── cli/
 │   └── interface.py # Интерфейс командной строки
@@ -36,6 +37,7 @@ data/
 config.json
 pyproject.toml
 README.md
+```
 
 ## Установка
 
